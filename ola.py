@@ -7,32 +7,33 @@ start_time = time.time()
 class SimulatedAnnealing():
 
     def __init__(self):
-        self.initTemp = 10000 #Temperatura inicial
+        self.initTemp = 7000 #Temperatura inicial
         self.coolingConst = 0.99 #Parámetro de enfriamento geométrico
         self.minTemp = 0.01 #Criterio de término, temperatura mínima
         
         self.n = -1
         self.i = -1
-        self.f_size = None
+        self.f_size = None          #Inicialización de variables
         self.f_weight = None
         self.solucion = None
         self.simAnnealing()
 
-    def simAnnealing(self):
-        firstSolucion = self.leerArchivo()
+    def simAnnealing(self): #Es la primera función que se ejecuta, y es donde se encuentra la metaheurística implementada
+        firstSolucion = self.leerArchivo() #leerArchivo retorna solucionRandom, que nos genera nuestra primera solución
         # print(self.getEsfuerzo(firstSolucion))
         solActual = firstSolucion
         bestSolucion = firstSolucion
         tempActual = self.initTemp
-        test = 1
-        while tempActual>self.minTemp:
+        # test = 1
+        print('Estamos trabajando para usted...')
+        while tempActual>self.minTemp and (time.time() - start_time)<10:   #Dos criterios de término, temperatura mínima y tiempo de ejecución
         # while test<maxA:
             solVecina = self.generarVecino(solActual)
             evalVecina = self.getEsfuerzo(solVecina)
             evalActual = self.getEsfuerzo(solActual)
-            if(evalVecina < evalActual):
+            if(evalVecina < evalActual):    #Al ser un problema de minimización, si la función de evaluación del vecino es menor se acepta directamente
                 solActual = solVecina
-            else:
+            else:   #Si no, calculamos la probabilidad del criterio de Metrópolis, sacamos un número aleatorio y si es menor que esta probabilidad, aceptamos la solución
                 prob = math.exp(-((evalVecina - evalActual)/tempActual))
                 if random.uniform(0,1) < prob:
                     solActual = solVecina
@@ -42,28 +43,29 @@ class SimulatedAnnealing():
             evalActual = self.getEsfuerzo(solActual)
             # print(solActual)
             # print(evalActual)
-            test += 1
-            if(evalActual < self.getEsfuerzo(bestSolucion)):
+            # test += 1
+            if(evalActual < self.getEsfuerzo(bestSolucion)):    #Vamos evaluando la solución que quede del proceso anterior, y si es mejor la guardamos en nuestra variable bestSolucion
                 bestSolucion = solActual
-            tempActual = tempActual * self.coolingConst
+            tempActual = tempActual * self.coolingConst     #Aplicamos enfriamiento para que de a poco vaya pasando de una alta exploración a una alta explotación
         listaPosiciones = []
         for item in bestSolucion:
             listaPosiciones.append(item[0])
+        print('--- Solución óptima encontrada con los criterios de término propuestos ---')
         print(listaPosiciones)
-        print(self.getEsfuerzo(bestSolucion))
+        print('Esfuerzo de la solución encontrada: '+str(self.getEsfuerzo(bestSolucion))+'\n')
         print("--- Tiempo de ejecución: %.4s segundos ---" % (time.time() - start_time))
 
-    def solucionRandom(self):
+    def solucionRandom(self):   #Genera una solución aleatoria basada en la que se lee en leerArchivo
         listaSolucion = list(self.solucion.items())
         random.shuffle(listaSolucion)
         return listaSolucion
 
-    def getEsfuerzo(self, solucion):
+    def getEsfuerzo(self, solucion):    #Función que evalúa la solución para retornar el esfuerzo
 
         total = 0.0
         middle_distance = 0.0
 
-        for i in range(self.n):
+        for i in range(self.n - 1):
             p1 = solucion[i][1]
             middle_distance = 0.0
             for j in range(i + 1, self.n):
@@ -79,7 +81,7 @@ class SimulatedAnnealing():
         vecino[i], vecino[j] = vecino[j], vecino[i]
         return vecino
 
-    def leerArchivo(self):
+    def leerArchivo(self): #Funcion que permite leer los archivos txt que contienen los datos, donde se guardan el número de instalaciones, los tamaños y una matriz de flujos
         listaArchivos = []
         for file_path in os.listdir(os.getcwd()):
             if os.path.isfile(os.path.join(os.getcwd(), file_path)):
@@ -106,33 +108,28 @@ class SimulatedAnnealing():
                     continue
 
                 if self.n < 0:
-                    # Primera linea número de instalaciones
+                    #Número de instalaciones
                     self.n = int(line)
                     self.f_size = [0] * self.n
-                    self.solucion = {}
+                    self.solucion = {} #Se genera un diccionario de solución, para que al generar la solución inicial y el movimiento swap, no se pierdan los índices iniciales
                     self.f_weight = [[0] * self.n for _ in range(self.n)]
                 elif self.i == -1:
-                    # Segunda linea tamaño de instalaciones
+                    #Tamaño de instalaciones
                     buf = line.split(",")
                     for k in range(self.n):
                         self.f_size[k] = int(buf[k].strip())
                         self.solucion[k + 1] = int(buf[k].strip())
                     self.i = 0
                 else:
-                    # Tercera linea flujo entre instalaciones
+                    #Flujo entre instalaciones
                     buf = line.split(",")
                     for k in range(self.n):
                         self.f_weight[self.i][k] = int(buf[k].strip())
                     self.i += 1
                 line = bufferedReader.readline().strip()
 
-        # print(f"Numero de instalaciones: {self.n}")
-        # print("Tamaños:", " ".join(map(str, self.f_size)))
-        # print("Flujo:")
-        # for row in self.f_weight:
-        #     print(" ".join(map(str, row)))
-        for key, value in self.solucion.items():
-            print(f'Instalación {key}: {value}')
+        # for key, value in self.solucion.items():
+        #     print(f'Instalación {key}: {value}')
         return self.solucionRandom()
 
 ola=SimulatedAnnealing()
