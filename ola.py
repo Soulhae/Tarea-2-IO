@@ -1,12 +1,15 @@
 import os
 import random
+import math
+import time
+start_time = time.time()
 
 class SimulatedAnnealing():
 
     def __init__(self):
-        self.initTemp = 2500 #Temperatura inicial
-        self.coolingConst = 0.8 #Parámetro de enfriamento geométrico
-        self.minTemp = 10 #Criterio de término, temperatura mínima
+        self.initTemp = 10000 #Temperatura inicial
+        self.coolingConst = 0.99 #Parámetro de enfriamento geométrico
+        self.minTemp = 0.01 #Criterio de término, temperatura mínima
         
         self.n = -1
         self.i = -1
@@ -17,35 +20,60 @@ class SimulatedAnnealing():
 
     def simAnnealing(self):
         firstSolucion = self.leerArchivo()
+        # print(self.getEsfuerzo(firstSolucion))
+        solActual = firstSolucion
         bestSolucion = firstSolucion
         tempActual = self.initTemp
+        test = 1
         while tempActual>self.minTemp:
-            #Evaluar sol y vecino, ver criterio de aceptación
+        # while test<maxA:
+            solVecina = self.generarVecino(solActual)
+            evalVecina = self.getEsfuerzo(solVecina)
+            evalActual = self.getEsfuerzo(solActual)
+            if(evalVecina < evalActual):
+                solActual = solVecina
+            else:
+                prob = math.exp(-((evalVecina - evalActual)/tempActual))
+                if random.uniform(0,1) < prob:
+                    solActual = solVecina
+                    # print('acepta')
+                # else:
+                    # print('no acepta')
+            evalActual = self.getEsfuerzo(solActual)
+            # print(solActual)
+            # print(evalActual)
+            test += 1
+            if(evalActual < self.getEsfuerzo(bestSolucion)):
+                bestSolucion = solActual
             tempActual = tempActual * self.coolingConst
+        listaPosiciones = []
+        for item in bestSolucion:
+            listaPosiciones.append(item[0])
+        print(listaPosiciones)
+        print(self.getEsfuerzo(bestSolucion))
+        print("--- Tiempo de ejecución: %.4s segundos ---" % (time.time() - start_time))
 
     def solucionRandom(self):
-        random.shuffle(self.solucion)
-        return self.solucion
+        listaSolucion = list(self.solucion.items())
+        random.shuffle(listaSolucion)
+        return listaSolucion
+
+    def getEsfuerzo(self, solucion):
+
+        total = 0.0
+        middle_distance = 0.0
+
+        for i in range(self.n):
+            p1 = solucion[i][1]
+            middle_distance = 0.0
+            for j in range(i + 1, self.n):
+                p2 = solucion[j][1]
+                total += ((p1 / 2) + middle_distance + (p2 / 2)) * self.f_weight[i][j]
+                middle_distance += p2
+        return total
     
-    # def critAceptacion(self):     Si es mejor, acepta directamente, si no se calcula probabilidad con el criterio de Metropolis
-
-
-    # def getEsfuerzo(self, solucion):     Falta multiplicar por el flujo
-
-    #     total = 0.0
-    #     middle_distance = 0.0
-
-    #     for i in range(self.n - 1):
-    #         p1 = solucion[i]
-    #         middle_distance = 0.0
-    #         for j in range(i + 1, self.n):
-    #             p2 = solucion[j]
-    #             total += self.f_size[p1] / 2 + middle_distance + self.f_size[p2] / 2
-    #             middle_distance += self.f_size[p2]
-    #     return total
-    
-    def generarVecino(solucion): #Movimiento swap entre 2 instalaciones random
-        vecino = solucion[:]
+    def generarVecino(self, solucionActual): #Movimiento swap entre 2 instalaciones random
+        vecino = solucionActual[:]
         i = random.randint(0, len(vecino) - 1)
         j = random.randint(0, len(vecino) - 1)
         vecino[i], vecino[j] = vecino[j], vecino[i]
@@ -81,14 +109,14 @@ class SimulatedAnnealing():
                     # Primera linea número de instalaciones
                     self.n = int(line)
                     self.f_size = [0] * self.n
-                    self.solucion = [0] * self.n
+                    self.solucion = {}
                     self.f_weight = [[0] * self.n for _ in range(self.n)]
                 elif self.i == -1:
                     # Segunda linea tamaño de instalaciones
                     buf = line.split(",")
                     for k in range(self.n):
                         self.f_size[k] = int(buf[k].strip())
-                        self.solucion[k] = int(buf[k].strip())
+                        self.solucion[k + 1] = int(buf[k].strip())
                     self.i = 0
                 else:
                     # Tercera linea flujo entre instalaciones
@@ -103,7 +131,8 @@ class SimulatedAnnealing():
         # print("Flujo:")
         # for row in self.f_weight:
         #     print(" ".join(map(str, row)))
-        # print(self.solucion)
+        for key, value in self.solucion.items():
+            print(f'Instalación {key}: {value}')
         return self.solucionRandom()
 
 ola=SimulatedAnnealing()
