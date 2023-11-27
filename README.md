@@ -6,7 +6,7 @@ Matías Burgos Castro, Eyleen Sánchez García, Benjamín Herrera Arancibia
 
 * Abra una terminal y en ella escriba: 
 ```
-    python directorio-a-la-carpeta/ola.py
+    python directorio-del-proyecto/ola.py
 ```
 * Luego seleccione la instancia a ejecutar
 * Si desea puede agregar más instancias con extensión .txt en la carpeta donde se encuentre el proyecto
